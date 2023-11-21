@@ -39,8 +39,8 @@ bool Info::Display(const std::string& file) {
   }
   proto::Header hdr = file_reader.GetHeader();
 
-  std::cout << setiosflags(std::ios::left);
-  std::cout << setiosflags(std::ios::fixed);
+  std::cout << std::setiosflags(std::ios::left);
+  std::cout << std::setiosflags(std::ios::fixed);
 
   int w = 16;
   // file name
@@ -102,9 +102,9 @@ bool Info::Display(const std::string& file) {
     ChannelCache* cache = idx.mutable_indexes(i)->mutable_channel_cache();
     if (idx.mutable_indexes(i)->type() == proto::SectionType::SECTION_CHANNEL) {
       std::cout << std::setw(w) << "";
-      std::cout << resetiosflags(std::ios::right);
+      std::cout << std::resetiosflags(std::ios::right);
       std::cout << std::setw(50) << cache->name();
-      std::cout << setiosflags(std::ios::right);
+      std::cout << std::setiosflags(std::ios::right);
       std::cout << std::setw(8) << cache->message_number();
       std::cout << std::setw(0) << " messages: ";
       std::cout << cache->message_type();
