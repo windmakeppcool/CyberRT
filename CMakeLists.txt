@@ -74,24 +74,24 @@ file(GLOB CYBER_PROTO_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/cyber/examples/proto/*.proto"
 )
 
-# set(CYBER_MSGS_CACHE ON CACHE BOOL "generate cyber proto msgs flag.")
-# set(PROTOBUF_PROTOC_EXECUTABLE /usr/local/bin/protoc)
-# if(${CYBER_MSGS_CACHE})
-#   set(CYBER_MSGS_CACHE OFF CACHE BOOL "generate cyber proto msgs flag." FORCE)
-#   FOREACH(FIL ${CYBER_PROTO_FILES})
-#     message("### generate proto file: ${FIL}")
-#     GET_FILENAME_COMPONENT(FIL_WE ${FIL} NAME_WE)
-#     string(REGEX REPLACE ".+/(.+)\\..*" "\\1" FILE_NAME ${FIL})
-#     string(REGEX REPLACE "(.+)\\${FILE_NAME}.*" "\\1" FILE_PATH ${FIL})
-#     EXECUTE_PROCESS(
-#         COMMAND
-#         ${PROTOBUF_PROTOC_EXECUTABLE}
-#         -I${CMAKE_CURRENT_SOURCE_DIR}
-#         --cpp_out=${CMAKE_CURRENT_SOURCE_DIR}
-#         ${FIL}
-#     )
-#   ENDFOREACH()
-# endif(${CYBER_MSGS_CACHE})
+set(CYBER_MSGS_CACHE ON CACHE BOOL "generate cyber proto msgs flag.")
+set(PROTOBUF_PROTOC_EXECUTABLE /usr/local/bin/protoc)
+if(${CYBER_MSGS_CACHE})
+  set(CYBER_MSGS_CACHE OFF CACHE BOOL "generate cyber proto msgs flag." FORCE)
+  FOREACH(FIL ${CYBER_PROTO_FILES})
+    message("### generate proto file: ${FIL}")
+    GET_FILENAME_COMPONENT(FIL_WE ${FIL} NAME_WE)
+    string(REGEX REPLACE ".+/(.+)\\..*" "\\1" FILE_NAME ${FIL})
+    string(REGEX REPLACE "(.+)\\${FILE_NAME}.*" "\\1" FILE_PATH ${FIL})
+    EXECUTE_PROCESS(
+        COMMAND
+        ${PROTOBUF_PROTOC_EXECUTABLE}
+        -I${CMAKE_CURRENT_SOURCE_DIR}
+        --cpp_out=${CMAKE_CURRENT_SOURCE_DIR}
+        ${FIL}
+    )
+  ENDFOREACH()
+endif(${CYBER_MSGS_CACHE})
 
 file(GLOB CYBER_PROTO_SRCS
     "${CMAKE_CURRENT_SOURCE_DIR}/cyber/proto/*.pb.cc"
@@ -159,4 +159,79 @@ add_subdirectory(cyber/tools)
 # --------------------------------------------------------------
 #                      CPack
 # --------------------------------------------------------------
+include(InstallRequiredSystemLibraries)
+# set (CPACK_GENERATOR        "ZIP")
+set (CPACK_GENERATOR        "TGZ;ZIP")
+set (CPACK_SOURCE_GENERATOR "TGZ;ZIP")
 
+set(CPACK_PACKAGE_ARCHITECTURE "aarch64")
+
+set(CPACK_PACKAGE_NAME   "${TARGET_NAME}")
+set(CPACK_PACKAGE_CONTACT "job@minhang.me")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Apollo CyberRT")
+set(CPACK_INSTALL_PREFIX              "${CMAKE_INSTALL_PREFIX}")
+set(CPACK_OUTPUT_FILE_PREFIX          "packages")
+set(CPACK_PACKAGE_RELOCATABLE         TRUE)
+set(CPACK_MONOLITHIC_INSTALL          TRUE)
+set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+set(CPACK_RPM_PACKAGE_GROUP "Development/Libraries")
+set(CPACK_RPM_PACKAGE_LICENSE "MIT")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/minhanghuang/CyberRT")
+set(CPACK_PACKAGE_FILE_NAME   "lib${CPACK_PACKAGE_NAME}")
+set(CPACK_PACKAGE_FILE_NAME   "${CPACK_PACKAGE_FILE_NAME}_${CPACK_PACKAGE_VERSION}_${CPACK_PACKAGE_ARCHITECTURE}")
+
+message(STATUS "CPACK install: ${CMAKE_INSTALL_PREFIX}")
+include(CPack)
+# --------------------------------------------------------------
+#                       package
+# --------------------------------------------------------------
+# cyber .h files
+# install(DIRECTORY cyber/
+#     DESTINATION include/cyber/
+#     FILES_MATCHING
+#     PATTERN "*.h"
+# )
+
+# apollo conf
+file(COPY cyber/conf/
+  DESTINATION ${CMAKE_BINARY_DIR}/share/conf/
+)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/share/conf/
+  DESTINATION share/conf/
+)
+
+# lib
+install(FILES
+    "${CMAKE_SYSROOT}/usr/lib/libglog.so"
+    "${CMAKE_SYSROOT}/usr/lib/libglog.so.0"
+    "${CMAKE_SYSROOT}/usr/lib/libglog.so.0.5.0"
+    "${CMAKE_SYSROOT}/usr/lib/libfastcdr.so"
+    "${CMAKE_SYSROOT}/usr/lib/libfastcdr.so.1"
+    "${CMAKE_SYSROOT}/usr/lib/libfastcdr.so.1.0.7"
+    "${CMAKE_SYSROOT}/usr/lib/libfastrtps.so"
+    "${CMAKE_SYSROOT}/usr/lib/libfastrtps.so.1"
+    "${CMAKE_SYSROOT}/usr/lib/libfastrtps.so.1.5.0"
+    DESTINATION lib
+)
+
+configure_file("setup.sh.in" "/home/faw/codepath/setup.sh" @ONLY)
+install(FILES 
+    "/home/faw/codepath/setup.sh"
+    DESTINATION .
+)
+
+message(STATUS "bin dir: ${CMAKE_BINARY_DIR}")
+install(DIRECTORY
+    "${CMAKE_BINARY_DIR}/bin/cyber/mainboard"
+    "${CMAKE_BINARY_DIR}/bin/cyber/tools"
+    DESTINATION bin)
+install(TARGETS ${TARGET_NAME}
+    EXPORT ${TARGET_NAME}
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+)
